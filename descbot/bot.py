@@ -1,16 +1,13 @@
 import discord
-import random
+import os
 from datetime import datetime
 from discord.enums import ChannelType
-
+from stateevent import StateEvent
+from channels import Channel
 client = discord.Client()
 
-afk                 = "213698001225515008"
-desc                = "213697773327876096"
-bot_training_ground = "348166696642543618"
-
 def good_channel(member):
-    return member.server.id == desc and member.voice_channel is not None and member.voice_channel.id != afk
+    return member.server.id == Channel.Gamma_bois and member.voice_channel is not None and member.voice_channel.id != Channel.Afk
 
 @client.event
 async def on_message(message):
@@ -33,16 +30,18 @@ async def on_message(message):
 async def on_voice_state_update(before, after):
     bot_channel = None
     for channel in client.get_all_channels():
-        if channel.type == ChannelType.text and channel.id == bot_training_ground:
+        if channel.type == ChannelType.text and channel.id == Channel.Bot_training_gamma:
             bot_channel = channel;
             break;
-    if not good_channel(before) and good_channel(after):
+    """if not good_channel(before) and good_channel(after):
         await client.send_message(bot_channel, "%s joined channel **%s**." % (str(after.display_name), str(after.voice_channel)))
     elif good_channel(before) and not good_channel(after):
         await client.send_message(bot_channel, "%s left channel **%s**." % (str(after.display_name), str(before.voice_channel)))
     elif good_channel(before) and good_channel(after):
-        await client.send_message(bot_channel, "%s switched from channel **%s** to **%s**." % (str(after.display_name), str(before.voice_channel), str(after.voice_channel)))
+        await client.send_message(bot_channel, "%s switched from channel **%s** to **%s**." % (str(after.display_name), str(before.voice_channel), str(after.voice_channel)))"""
     print(datetime.now())
+    print(StateEvent.getState(before))
+    print(StateEvent.getState(after))
 
 @client.event
 async def on_ready():
@@ -51,4 +50,4 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-client.run('')
+client.run(os.environ.get('DESCBOT_TOKEN'))
