@@ -1,13 +1,19 @@
 import discord
 import os
+import time
 from datetime import datetime
 from discord.enums import ChannelType
 from stateevent import StateEvent
+from databasehandler import DatabaseHandler
 from channels import Channel
 client = discord.Client()
 
-def good_channel(member):
-    return member.server.id == Channel.Gamma_bois and member.voice_channel is not None and member.voice_channel.id != Channel.Afk
+dbHandler = DatabaseHandler()
+dbHandler.check_in(2, "World of Warcraft")
+time.sleep(3)
+dbHandler.check_out(2)
+#exit(0)
+#dbHandler.check_in(2, "World of Warcraft")
 
 @client.event
 async def on_message(message):
@@ -33,15 +39,12 @@ async def on_voice_state_update(before, after):
         if channel.type == ChannelType.text and channel.id == Channel.Bot_training_gamma:
             bot_channel = channel;
             break;
-    """if not good_channel(before) and good_channel(after):
-        await client.send_message(bot_channel, "%s joined channel **%s**." % (str(after.display_name), str(after.voice_channel)))
-    elif good_channel(before) and not good_channel(after):
-        await client.send_message(bot_channel, "%s left channel **%s**." % (str(after.display_name), str(before.voice_channel)))
-    elif good_channel(before) and good_channel(after):
-        await client.send_message(bot_channel, "%s switched from channel **%s** to **%s**." % (str(after.display_name), str(before.voice_channel), str(after.voice_channel)))"""
+    #beforeName = "None" if before.server is None or before.voice_channel is None else str(before.voice_channel)
+    #afterName = "None" if after.server is None or after.voice_channel is None else str(after.voice_channel)
+    #await client.send_message(bot_channel, "%s switched from channel **%s** to **%s**" % (str(after.name), str(beforeName), str(afterName)))
     print(datetime.now())
-    print(StateEvent.getState(before))
-    print(StateEvent.getState(after))
+    print(str(before.name) + ", " + str(StateEvent.getState(before)))
+    print(str(after.name) + ", " + str(StateEvent.getState(after)))
 
 @client.event
 async def on_ready():
