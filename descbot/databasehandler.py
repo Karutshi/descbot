@@ -25,11 +25,11 @@ class DatabaseHandler:
         cur.execute(query, (userId, channelName, time))
 
     @cursor
-    def check_out(self, cur, userId):
+    def check_out(self, cur, userId, time = None):
         cur.execute("DELETE FROM online WHERE id=%s RETURNING channel, joined;", (userId,))
         channel, joined = cur.fetchone()
         print((channel, joined))
-        time = datetime.now() - joined
+        time = (datetime.now() if time is None else time) - joined
         cur.execute("UPDATE times SET time=time+%s WHERE id=%s AND channel=%s;", (time, userId, channel))
         cur.execute("INSERT INTO times (id, channel, time)" +
                     "SELECT %s, %s, %s WHERE NOT EXISTS (" +

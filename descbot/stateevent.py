@@ -10,7 +10,7 @@ class StateEvent(Enum):
 
     @classmethod
     def getState(cls, member):
-        if member.server is None or member.voice_channel is None or member.server.id != Channel.Gamma_bois:
+        if member.server is None or member.voice_channel is None or member.server.id != Channel.Desc:
             return cls.Offline
         elif member.voice_channel.id == Channel.Afk:
             return cls.Afk
