@@ -1,7 +1,9 @@
 import discord
 import os
 import time
-from datetime import datetime
+import re
+import signal, sys
+from datetime import datetime, timedelta
 from discord.enums import ChannelType
 from stateevent import StateEvent
 from databasehandler import DatabaseHandler
@@ -25,8 +27,45 @@ class Bot(discord.Client):
         if message.author == self.user:
             return
 
-        if message.channel.name == "bot_training_ground":
-            print(dir(message))
+        if message.channel.id == Channel.Descbot_room:
+            mgrp = re.search(r"stats.*(\d+)", message.content, re.IGNORECASE)
+            if "help" in message.content.lower():
+                await self.send_help_message()
+            elif "stats" in message.content.lower():
+                amount = int(mgrp.group(1)) if mgrp is not None else 5
+                print(amount)
+                if message.mentions:
+                    for user in message.mentions:
+                        await self.send_user_stats(user, amount)
+                else:
+                    await self.send_stats(amount)
+    
+    async def send_help_message(self): 
+        room = self.get_channel(Channel.Descbot_room)
+        await self.send_message(room, "This bot counts the time DESC members spend in voice channels.\n" + 
+                                      "Current leaderboard can be seen by sending command `stats` in this channel, " + 
+                                      "and if you want to see stats for a specific user you can add their @-tag to the command.")
+
+    async def send_stats(self, amount):
+        room = self.get_channel(Channel.Descbot_room)
+        await self.send_message(room, "Current leaderboard:")
+        i = 0
+        message = ""
+        for userId, time in self.dbHandler.get_stats(amount):
+            i += 1
+            user = self.get_server(Channel.Desc).get_member(str(userId))
+            userName = user.nick if user.nick is not None else user.name
+            await self.send_message(room, "%d: **%s**, *%s*" % (i, userName, str(timedelta(seconds = time.seconds))))
+ 
+    async def send_user_stats(self, user, amount = None):
+        userName = user.nick if user.nick is not None else user.name
+        room = self.get_channel(Channel.Descbot_room)
+        totalTime = self.dbHandler.get_user_total(int(user.id))
+        await self.send_message(room, 'Stats for user **%s**:' % userName)
+        await self.send_message(room, 'Total time in `all channels`: *%s*' % str(timedelta(seconds = totalTime.seconds)))
+        for channel, time in self.dbHandler.get_user_stats(int(user.id), amount):
+            print((channel, time))
+            await self.send_message(room, 'Time in channel `%s`: *%s*' % (channel, str(timedelta(seconds = time.seconds))))
             #await self.send_message(message.channel, 'Sorry. Didn\'t it! ({}).'.format(answer))
 
     async def on_voice_state_update(self, before, after):
@@ -70,7 +109,8 @@ class Bot(discord.Client):
 
     def check_everyone_out(self, time = None):
         time = datetime.now() if time is None else time
-        
+        self.dbHandler.check_everyone_out(time)
+        print("Everyone has been checked out.")
 
     def get_all_online_users(self):
         users = []
@@ -83,4 +123,10 @@ class Bot(discord.Client):
         return users
 
 bot = Bot()
+def signal_handler(signal, frame):
+    bot.check_everyone_out()
+    bot.logout()
+    sys.exit(0)
+signal.signal(signal.SIGINT, signal_handler)
 bot.run(os.environ.get('DESCBOT_TOKEN'))
+
