@@ -125,13 +125,11 @@ class Bot(discord.Client):
         messages = []
         current_message = ""
         for row in message.split("\n"):
-            print("loop1")
             row += "\n"
             if (len(row) >= 2000) and current_message:
                 messages.append(current_message)
                 current_message = ""
             while(len(row) >= 2000):
-                print("loop2")
                 messages.append(row[:2000])
                 row = row[2000:]
             if len(current_message) + len(row) >= 2000:
