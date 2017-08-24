@@ -33,7 +33,6 @@ class Bot(discord.Client):
                 await self.send_help_message()
             elif "stats" in message.content.lower():
                 amount = int(mgrp.group(1)) if mgrp is not None else 5
-                print(amount)
                 if message.mentions:
                     for user in message.mentions:
                         await self.send_user_stats(user, amount)
@@ -64,7 +63,7 @@ class Bot(discord.Client):
         message = 'Stats for user **%s**:\n\n' % userName
         message += 'Total time in `all channels`: %s\n\n' % str(timedelta(seconds = totalTime.seconds))
         for channel, time in self.dbHandler.get_user_stats(int(user.id), amount):
-            message += 'Time in channel `%s`: %s' % (channel, str(timedelta(seconds = time.seconds)))
+            message += 'Time in channel `%s`: %s\n' % (channel, str(timedelta(seconds = time.seconds)))
         await self.smart_message(room, message)
 
     async def on_voice_state_update(self, before, after):
