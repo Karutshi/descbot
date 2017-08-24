@@ -42,31 +42,30 @@ class Bot(discord.Client):
     
     async def send_help_message(self): 
         room = self.get_channel(Channel.Descbot_room)
-        await self.send_message(room, "This bot counts the time DESC members spend in voice channels.\n" + 
+        await self.smart_message(room, "This bot counts the time DESC members spend in voice channels.\n" + 
                                       "Current leaderboard can be seen by sending command `stats` in this channel, " + 
                                       "and if you want to see stats for a specific user you can add their @-tag to the command.")
 
     async def send_stats(self, amount):
         room = self.get_channel(Channel.Descbot_room)
-        await self.send_message(room, "Current leaderboard:")
+        message = "Current leaderboard:\n\n"
         i = 0
-        message = ""
         for userId, time in self.dbHandler.get_stats(amount):
             i += 1
             user = self.get_server(Channel.Desc).get_member(str(userId))
             userName = user.nick if user.nick is not None else user.name
-            await self.send_message(room, "%d: **%s**, *%s*" % (i, userName, str(timedelta(seconds = time.seconds))))
+            message += "%d: **%s**, %s\n" % (i, userName, str(timedelta(seconds = time.seconds)))
+        await self.smart_message(room, message)
  
     async def send_user_stats(self, user, amount = None):
         userName = user.nick if user.nick is not None else user.name
         room = self.get_channel(Channel.Descbot_room)
         totalTime = self.dbHandler.get_user_total(int(user.id))
-        await self.send_message(room, 'Stats for user **%s**:' % userName)
-        await self.send_message(room, 'Total time in `all channels`: *%s*' % str(timedelta(seconds = totalTime.seconds)))
+        message = 'Stats for user **%s**:\n\n' % userName
+        message += 'Total time in `all channels`: %s\n\n' % str(timedelta(seconds = totalTime.seconds))
         for channel, time in self.dbHandler.get_user_stats(int(user.id), amount):
-            print((channel, time))
-            await self.send_message(room, 'Time in channel `%s`: *%s*' % (channel, str(timedelta(seconds = time.seconds))))
-            #await self.send_message(message.channel, 'Sorry. Didn\'t it! ({}).'.format(answer))
+            message += 'Time in channel `%s`: %s' % (channel, str(timedelta(seconds = time.seconds)))
+        await self.smart_message(room, message)
 
     async def on_voice_state_update(self, before, after):
         beforeState = StateEvent.getState(before)
@@ -121,6 +120,27 @@ class Bot(discord.Client):
                     if not user.self_deaf:
                         users.append((user, channel))
         return users
+    
+    async def smart_message(self, channel, message):
+        messages = []
+        current_message = ""
+        for row in message.split("\n"):
+            print("loop1")
+            row += "\n"
+            if (len(row) >= 2000) and current_message:
+                messages.append(current_message)
+                current_message = ""
+            while(len(row) >= 2000):
+                print("loop2")
+                messages.append(row[:2000])
+                row = row[2000:]
+            if len(current_message) + len(row) >= 2000:
+                messages.append(current_message)
+                current_message = ""
+            current_message += row
+        messages.append(current_message)
+        for message in messages:
+            await self.send_message(channel, message)
 
 bot = Bot()
 def signal_handler(signal, frame):
