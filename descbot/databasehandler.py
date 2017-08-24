@@ -54,9 +54,9 @@ class DatabaseHandler:
                 "USING (id, channel) "\
                 "WHERE id = %s;"
         online_time = lambda x: datetime.now() - x if x is not None else timedelta(seconds = 0)
-        time = time if time is not None else timedelta(seconds = 0)
+        safe_time = lambda x: x if x is not None else timedelta(seconds = 0)
         cur.execute(query, (userId,))
-        stats = [(channel, time + online_time(joined)) for channel, time, joined in cur]
+        stats = [(channel, safe_time(time) + online_time(joined)) for channel, time, joined in cur]
         print(stats)
         for row in sorted(stats, key = lambda x: -x[1])[:amount]:
             yield row
