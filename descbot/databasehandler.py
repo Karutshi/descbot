@@ -49,11 +49,12 @@ class DatabaseHandler:
 
     @cursor
     def get_user_stats(self, cur, userId, amount):
-        query = "SELECT times.channel, time, joined FROM "\
-                "times LEFT OUTER JOIN online "\
-                "ON times.id = online.id AND times.channel = online.channel "\
-                "WHERE times.id = %s;"
+        query = "SELECT channel, time, joined FROM "\
+                "times FULL OUTER JOIN online "\
+                "USING (id, channel) "\
+                "WHERE id = %s;"
         online_time = lambda x: datetime.now() - x if x is not None else timedelta(seconds = 0)
+        time = time if time is not None else timedelta(seconds = 0)
         cur.execute(query, (userId,))
         stats = [(channel, time + online_time(joined)) for channel, time, joined in cur]
         print(stats)
@@ -62,25 +63,27 @@ class DatabaseHandler:
 
     @cursor
     def get_stats(self, cur, amount):
-        query = "SELECT times.id, SUM(time), MIN(joined) FROM "\
-                "times LEFT OUTER JOIN online "\
-                "ON times.id = online.id "\
-                "GROUP BY times.id;"
+        query = "SELECT id, SUM(time), MIN(joined) FROM "\
+                "times FULL OUTER JOIN online "\
+                "USING (id) "\
+                "GROUP BY id;"
         now = datetime.now()
         online_time = lambda x: now - x if x is not None else timedelta(seconds = 0)
+        safe_time = lambda x: x if x is not None else timedelta(seconds = 0)
         cur.execute(query)
-        stats = [(uid, time + online_time(joined)) for uid, time, joined in cur]
+        stats = [(uid, safe_time(time) + online_time(joined)) for uid, time, joined in cur]
         for row in sorted(stats, key = lambda x: -x[1])[:amount]:
             yield row
 
     @cursor
     def get_user_total(self, cur, userId):
-        query = "SELECT times.id, SUM(time), MIN(joined) FROM "\
-                "times LEFT OUTER JOIN online "\
-                "ON times.id = online.id "\
-                "WHERE times.id = %s "\
-                "GROUP BY times.id;"
+        query = "SELECT id, SUM(time), MIN(joined) FROM "\
+                "times FULL OUTER JOIN online "\
+                "USING (id) "\
+                "WHERE id = %s "\
+                "GROUP BY id;"
         cur.execute(query, (userId,))
         online_time = lambda x: datetime.now() - x if x is not None else timedelta(seconds = 0)
         uid, time, joined = cur.fetchone()
+        time = time if time is not None else timedelta(seconds = 0)
         return time + online_time(joined)
