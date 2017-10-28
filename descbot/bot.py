@@ -81,7 +81,9 @@ class Bot(discord.Client):
                 self.dbHandler.check_out(int(after.id))
                 self.dbHandler.check_in(int(after.id), after.voice_channel.name)
                 if beforeState == StateEvent.Mute:
-                    print("%s unmuted themselves in %s." % (after.ick, after.voice_channel.name))
+                    print("%s unmuted themselves in %s." % (userName, after.voice_channel.name))
+		else if beforeState == StateEvent.Online:
+                    print("%s muted themselves in %s." % (userName, after.voice_channel.name))
                 else:
                     print("%s switched channels from %s to %s." % (userName, before.voice_channel.name, after.voice_channel.name))
         else:
